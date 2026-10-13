@@ -33,6 +33,15 @@ jobs:
       - name: Build standalone application
         run: python -m PyInstaller --noconfirm --clean engagelab_tag_tool.spec
 
+      - name: Smoke test macOS application
+        if: runner.os == 'macOS'
+        run: '"dist/EngageLab Tag 工具.app/Contents/MacOS/EngageLab-Tag-Tool" --help'
+
+      - name: Smoke test Windows application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '& "dist\EngageLab-Tag-Tool.exe" --help'
+
       - name: Archive macOS application
         if: runner.os == 'macOS'
         shell: bash

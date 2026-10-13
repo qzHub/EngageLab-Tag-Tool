@@ -5,11 +5,13 @@
 - 批量为候选设备添加同一个 Tag；
 - 逐个验证候选 registration ID 是否已经绑定指定 Tag，并导出已绑定列表。
 
+实现刻意保持简单：`static/index.html` 包含全部页面、样式和交互代码，`server.py` 使用 Python 标准库提供本机页面和 EngageLab API 代理。不能只保留 HTML 直接调用 EngageLab，因为官方 API 没有提供浏览器跨域响应头。
+
 ## 最终用户使用（无需安装环境）
 
 发布包使用 PyInstaller 将 Python 解释器和静态资源一同打包。最终用户不需要安装 Python、pip、Node.js 或其他依赖。
 
-- macOS：解压后双击 `EngageLab Tag 工具.app`。
+- macOS：解压后双击 `EngageLab Tag 工具.app`。未配置 Apple Developer ID 时，首次启动请按住 Control 点击应用并选择“打开”；正式分发建议配置签名和公证。
 - Windows：解压后双击 `EngageLab-Tag-Tool.exe`。
 
 程序会自动选择一个空闲的本地端口并打开默认浏览器。关闭页面约 5 秒后，本地服务自动结束；如果浏览器未能打开，程序会在 60 秒后自动结束。
@@ -76,7 +78,7 @@ registration-id-2
 
 空行与重复 ID 会自动忽略。一次最多处理 100,000 个唯一 ID；后端会按 EngageLab 接口限制自动拆成每批 1,000 个。
 
-页面的“CSV 上传”模式提供标准模板下载。切换到“手动输入”模式后，每输入一个 registration ID，请按一次 `Enter` 回车键完成添加；已添加的 ID 可以单独移除或全部清空。
+页面提供标准模板下载。上传 CSV 后，ID 会进入同一个文本框；也可以直接手动输入，每输入一个 registration ID 后按一次 `Enter` 回车。空行和重复 ID 会自动忽略。
 
 ## 查询 Tag 绑定
 

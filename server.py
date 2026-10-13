@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import base64
 import json
-import mimetypes
 import re
 import ssl
 import sys
@@ -25,6 +24,7 @@ from urllib.request import Request, urlopen
 
 
 STATIC_DIR = Path(__file__).with_name("static")
+INDEX_FILE = STATIC_DIR / "index.html"
 MAX_REQUEST_BYTES = 10 * 1024 * 1024
 MAX_REGISTRATION_IDS = 100_000
 ENGAGELAB_BATCH_SIZE = 1_000
@@ -329,28 +329,20 @@ class TagToolHandler(BaseHTTPRequestHandler):
         if self.path == "/api/session/watch":
             self._watch_browser_session()
             return
-
-        relative_path = "index.html" if self.path in ("/", "/index.html") else self.path.lstrip("/")
-        if "?" in relative_path:
-            relative_path = relative_path.split("?", 1)[0]
-        candidate = (STATIC_DIR / relative_path).resolve()
-        try:
-            candidate.relative_to(STATIC_DIR.resolve())
-        except ValueError:
-            self.send_error(HTTPStatus.NOT_FOUND)
-            return
-        if not candidate.is_file():
+        if self.path.split("?", 1)[0] not in ("/", "/index.html"):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
 
-        content = candidate.read_bytes()
-        content_type, _ = mimetypes.guess_type(candidate.name)
+        content = INDEX_FILE.read_bytes()
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", f"{content_type or 'application/octet-stream'}; charset=utf-8")
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(content)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'self'; script-src 'self'")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'",
+        )
         self.end_headers()
         self.wfile.write(content)
 
@@ -484,7 +476,12 @@ class TagToolServer(ThreadingHTTPServer):
 def main() -> None:
     parser = argparse.ArgumentParser(description="EngageLab registration ID 批量打 Tag 工具")
     parser.add_argument("--host", default="127.0.0.1", help="监听地址（默认仅本机）")
-    parser.add_argument("--port", type=int, default=8080, help="监听端口，默认 8080")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=0 if IS_PACKAGED else 8080,
+        help="监听端口（独立应用自动选择空闲端口，源码运行默认 8080）",
+    )
     parser.add_argument(
         "--open-browser",
         action=argparse.BooleanOptionalAction,

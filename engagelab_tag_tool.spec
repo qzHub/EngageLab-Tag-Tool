@@ -20,24 +20,31 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.datas,
-    [],
-    name=app_name,
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=False,
-    console=False,
-    disable_windowed_traceback=False,
-)
-
 if sys.platform == "darwin":
-    app = BUNDLE(
+    # Use the console bootloader inside a one-folder app. It avoids the
+    # TransformProcessType crash seen with the one-file windowed bootloader.
+    exe = EXE(
+        pyz,
+        a.scripts,
+        [],
+        exclude_binaries=True,
+        name=app_name,
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=True,
+    )
+    collected = COLLECT(
         exe,
+        a.binaries,
+        a.datas,
+        strip=False,
+        upx=False,
+        name=app_name,
+    )
+    app = BUNDLE(
+        collected,
         name="EngageLab Tag 工具.app",
         icon=None,
         bundle_identifier="local.engagelab.tag-tool",
@@ -49,4 +56,19 @@ if sys.platform == "darwin":
             "NSHighResolutionCapable": True,
             "NSPrincipalClass": "NSApplication",
         },
+    )
+else:
+    exe = EXE(
+        pyz,
+        a.scripts,
+        a.binaries,
+        a.datas,
+        [],
+        name=app_name,
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=False,
+        disable_windowed_traceback=False,
     )
