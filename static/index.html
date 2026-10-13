@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EngageLab 批量 Tag 工具</title>
+    <meta name="description" content="从 CSV 批量读取 registration ID，并为设备添加 EngageLab Tag。">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="brand-mark" aria-hidden="true">EL</div>
+        <div>
+          <p class="eyebrow">EngageLab AppPush</p>
+          <h1>批量设备 Tag 工具</h1>
+          <p class="intro">批量设置设备 Tag，或验证候选 registration ID 的 Tag 绑定关系。</p>
+        </div>
+      </header>
+
+      <form id="tag-form" class="workspace" novalidate>
+        <div class="operation-switch" role="tablist" aria-label="Tag 操作类型">
+          <button id="set-operation-button" class="operation-button is-active" type="button" role="tab" aria-selected="true">批量设置 Tag</button>
+          <button id="query-operation-button" class="operation-button" type="button" role="tab" aria-selected="false">查询 Tag 绑定</button>
+        </div>
+
+        <section class="card settings-card" aria-labelledby="settings-title">
+          <div class="section-heading">
+            <span class="step">01</span>
+            <div>
+              <h2 id="settings-title">连接与标签</h2>
+              <p id="settings-description">鉴权信息只用于本次请求，不会保存在浏览器或服务端磁盘。</p>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label class="field field-wide">
+              <span>数据中心</span>
+              <select id="api-base-url" name="api_base_url" required>
+                <option value="https://pushapi-sgp.engagelab.com">新加坡 · Singapore</option>
+                <option value="https://pushapi-usva.engagelab.com">美国弗吉尼亚 · Virginia</option>
+                <option value="https://pushapi-defra.engagelab.com">德国法兰克福 · Frankfurt</option>
+                <option value="https://pushapi-hk.engagelab.com">中国香港 · Hong Kong</option>
+                <option value="https://pushapi-jpn.engagelab.com">日本 · Japan</option>
+                <option value="https://pushapi-bra.engagelab.com">巴西 · Brazil</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>AppKey</span>
+              <input id="app-key" name="app_key" type="text" autocomplete="off" spellcheck="false" placeholder="输入 AppKey" required>
+            </label>
+
+            <label class="field">
+              <span>Master Secret</span>
+              <span class="secret-wrap">
+                <input id="master-secret" name="master_secret" type="password" autocomplete="new-password" spellcheck="false" placeholder="输入 Master Secret" required>
+                <button id="toggle-secret" class="text-button" type="button" aria-label="显示 Master Secret">显示</button>
+              </span>
+            </label>
+
+            <label class="field">
+              <span id="tag-label-text">要添加的 Tag</span>
+              <input id="tag" name="tag" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="例如 vip_user" required>
+              <small id="tag-bytes">0 / 40 字节</small>
+            </label>
+
+            <label class="field">
+              <span>单批请求超时</span>
+              <span class="input-suffix">
+                <input id="timeout" name="timeout_seconds" type="number" min="5" max="120" step="1" value="30" required>
+                <span>秒</span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card upload-card" aria-labelledby="upload-title">
+          <div class="section-heading">
+            <span class="step">02</span>
+            <div>
+              <h2 id="upload-title">添加 registration ID</h2>
+              <p id="input-description">选择 CSV 批量导入，或逐条手动输入。</p>
+            </div>
+          </div>
+
+          <div class="mode-switch" role="tablist" aria-label="registration ID 输入方式">
+            <button id="csv-mode-button" class="mode-button is-active" type="button" role="tab" aria-selected="true" aria-controls="csv-panel">CSV 上传</button>
+            <button id="manual-mode-button" class="mode-button" type="button" role="tab" aria-selected="false" aria-controls="manual-panel">手动输入</button>
+          </div>
+
+          <div id="csv-panel" class="input-panel" role="tabpanel" aria-labelledby="csv-mode-button">
+            <div class="template-row">
+              <span>每行一个 registration ID，首行可使用表头。</span>
+              <a class="template-link" href="/registration-id-template.csv" download="registration-id-template.csv">下载 CSV 模板</a>
+            </div>
+
+            <label id="drop-zone" class="drop-zone" for="csv-file">
+              <input id="csv-file" type="file" accept=".csv,text/csv">
+              <span class="upload-icon" aria-hidden="true">↥</span>
+              <strong>拖入 CSV，或点击选择</strong>
+              <span>最大 10 MB · 最多 100,000 个唯一 ID</span>
+            </label>
+
+            <div id="file-summary" class="file-summary" hidden>
+              <div>
+                <strong id="file-name"></strong>
+                <span id="file-meta"></span>
+              </div>
+              <button id="remove-file" type="button" class="icon-button" aria-label="移除文件">×</button>
+            </div>
+
+            <div id="preview" class="preview" hidden>
+              <div class="preview-stats">
+                <div><span>有效 ID</span><strong id="valid-count">0</strong></div>
+                <div><span>重复项</span><strong id="duplicate-count">0</strong></div>
+                <div><span id="request-count-label">预计批次</span><strong id="batch-count">0</strong></div>
+              </div>
+              <details>
+                <summary>预览前 8 条</summary>
+                <ol id="id-preview"></ol>
+              </details>
+            </div>
+          </div>
+
+          <div id="manual-panel" class="input-panel" role="tabpanel" aria-labelledby="manual-mode-button" hidden>
+            <label class="field manual-field" for="manual-id-input">
+              <span>Registration ID</span>
+              <input id="manual-id-input" type="text" autocomplete="off" spellcheck="false" placeholder="输入一个 registration ID">
+              <small>输入完成后按 Enter 回车键结束并添加</small>
+            </label>
+            <div class="manual-summary">
+              <span>已添加 <strong id="manual-count">0</strong> 个</span>
+              <button id="clear-manual-ids" class="text-button static-text-button" type="button" disabled>全部清空</button>
+            </div>
+            <div id="manual-empty" class="manual-empty">尚未添加 registration ID</div>
+            <ul id="manual-id-list" class="manual-id-list" aria-label="已添加的 registration ID"></ul>
+          </div>
+        </section>
+
+        <section class="action-bar">
+          <div class="safety-note">
+            <span aria-hidden="true">◆</span>
+            <p><strong id="action-note-title">本操作只添加 Tag</strong><br><span id="action-note-description">不会移除设备已有的其他 Tag。</span></p>
+          </div>
+          <button id="submit-button" class="primary-button" type="submit" disabled>
+            <span class="button-label">开始批量设置</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </section>
+      </form>
+
+      <section id="result-card" class="card result-card" aria-live="polite" hidden>
+        <div class="result-head">
+          <div>
+            <p class="eyebrow">执行结果</p>
+            <h2 id="result-title">处理完成</h2>
+          </div>
+          <div class="result-actions">
+            <button id="download-query" class="secondary-button" type="button" hidden>导出已绑定 CSV</button>
+            <button id="retry-failed" class="secondary-button" type="button" hidden>仅重试失败批次</button>
+          </div>
+        </div>
+        <div class="result-stats">
+          <div><span id="result-primary-label">成功</span><strong id="success-count">0</strong></div>
+          <div><span id="result-secondary-label">失败</span><strong id="failed-count">0</strong></div>
+          <div id="error-stat" hidden><span>查询失败</span><strong id="error-count">0</strong></div>
+          <div><span id="result-total-label">总计</span><strong id="total-count">0</strong></div>
+        </div>
+        <div id="batch-results" class="batch-results"></div>
+        <div id="query-results" class="query-results" hidden>
+          <div class="query-list-head">
+            <strong>已绑定的 registration ID</strong>
+            <span id="query-list-note"></span>
+          </div>
+          <textarea id="query-id-list" class="query-id-list" readonly aria-label="已绑定的 registration ID 列表"></textarea>
+          <div id="query-errors" class="batch-results"></div>
+        </div>
+      </section>
+
+      <p id="form-error" class="form-error" role="alert" hidden></p>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>
