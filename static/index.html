@@ -3,232 +3,65 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EngageLab Tag 工具</title>
-  <style>
-    :root { color-scheme: light; font-family: system-ui, -apple-system, sans-serif; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #f5f7fb; color: #182230; }
-    main { width: min(920px, calc(100% - 32px)); margin: 32px auto; }
-    h1 { margin-bottom: 6px; }
-    .hint { color: #667085; margin-top: 0; }
-    .card { background: white; border: 1px solid #e4e7ec; border-radius: 12px; padding: 20px; margin: 16px 0; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    label { display: grid; gap: 6px; font-weight: 600; }
-    input, select, textarea, button { font: inherit; }
-    input, select, textarea { width: 100%; border: 1px solid #cfd4dc; border-radius: 8px; padding: 10px 12px; background: white; }
-    textarea { min-height: 210px; resize: vertical; font-family: ui-monospace, monospace; }
-    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-    button, .file-button { border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-weight: 650; }
-    button { background: #155eef; color: white; }
-    button.secondary, .file-button { background: #eef4ff; color: #1849a9; }
-    button:disabled { opacity: .55; cursor: wait; }
-    .file-button input { display: none; }
-    .count { margin-left: auto; color: #475467; }
-    #status { min-height: 24px; font-weight: 600; }
-    #status.error { color: #b42318; }
-    #status.ok { color: #067647; }
-    #result[hidden], #downloadBound[hidden] { display: none; }
-    .summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-    .pill { background: #f2f4f7; border-radius: 999px; padding: 6px 10px; }
-    pre { overflow: auto; background: #101828; color: #e4e7ec; border-radius: 8px; padding: 14px; white-space: pre-wrap; }
-    .result-list { min-height: 120px; }
-    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } main { width: min(100% - 20px, 920px); margin: 16px auto; } }
-  </style>
+  <title>EngageLab Tag Tool</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main>
-  <h1>EngageLab Tag 工具</h1>
-  <p class="hint">批量设置 Tag，或验证一批 registration ID 是否已绑定指定 Tag。</p>
+  <header>
+    <h1>EngageLab Tag Tool</h1>
+    <p>批量设置 Tag，或验证候选 registration ID 是否已绑定指定 Tag。</p>
+  </header>
 
-  <section class="card">
-    <div class="grid">
-      <label>数据中心
-        <select id="apiBase">
-          <option value="https://pushapi-sgp.engagelab.com">新加坡</option>
-          <option value="https://pushapi-usva.engagelab.com">美国</option>
-          <option value="https://pushapi-defra.engagelab.com">德国</option>
-          <option value="https://pushapi-hk.engagelab.com">中国香港</option>
-          <option value="https://pushapi-jpn.engagelab.com">日本</option>
-          <option value="https://pushapi-bra.engagelab.com">巴西</option>
-        </select>
-      </label>
-      <label>Tag
-        <input id="tag" maxlength="40" placeholder="例如 vip_user" autocomplete="off">
-      </label>
-      <label>AppKey
-        <input id="appKey" placeholder="请输入 AppKey" autocomplete="off">
-      </label>
-      <label>Master Secret
-        <input id="masterSecret" type="password" placeholder="请输入 Master Secret" autocomplete="new-password">
-      </label>
-    </div>
+  <section class="card form-grid">
+    <label>数据中心
+      <select id="apiBase">
+        <option value="https://pushapi-sgp.engagelab.com">新加坡</option>
+        <option value="https://pushapi-usva.engagelab.com">美国</option>
+        <option value="https://pushapi-defra.engagelab.com">德国</option>
+        <option value="https://pushapi-hk.engagelab.com">中国香港</option>
+        <option value="https://pushapi-jpn.engagelab.com">日本</option>
+        <option value="https://pushapi-bra.engagelab.com">巴西</option>
+      </select>
+    </label>
+    <label>Tag
+      <input id="tag" maxlength="40" placeholder="例如 vip_user" autocomplete="off">
+    </label>
+    <label>AppKey
+      <input id="appKey" placeholder="请输入 AppKey" autocomplete="off">
+    </label>
+    <label>Master Secret
+      <input id="masterSecret" type="password" placeholder="请输入 Master Secret" autocomplete="new-password">
+    </label>
   </section>
 
   <section class="card">
-    <div class="row">
+    <div class="toolbar">
       <label class="file-button">上传 CSV<input id="csvFile" type="file" accept=".csv,text/csv"></label>
-      <button id="downloadTemplate" class="secondary" type="button">下载 CSV 模板</button>
+      <a class="button secondary" href="registration-id-template.csv" download>下载 CSV 模板</a>
       <button id="clearIds" class="secondary" type="button">清空</button>
-      <span id="idCount" class="count">0 个 registration ID</span>
+      <span id="idCount">0 个 registration ID</span>
     </div>
-    <p class="hint">CSV 每行一个 ID；也可以在下面手动输入，每输入一个 registration ID 后按 Enter 回车。</p>
+    <p class="hint">CSV 每行一个 ID；也可以手动输入，每输入一个 registration ID 后按 Enter 回车。</p>
     <textarea id="registrationIds" spellcheck="false" placeholder="registration-id-1&#10;registration-id-2"></textarea>
   </section>
 
-  <section class="card">
-    <div class="row">
-      <button id="bindTag" type="button">批量设置 Tag</button>
-      <button id="verifyTag" class="secondary" type="button">查询 Tag 绑定</button>
-      <span id="status" aria-live="polite"></span>
-    </div>
+  <section class="card toolbar">
+    <button id="bindTag" type="button">批量设置 Tag</button>
+    <button id="verifyTag" class="secondary" type="button">查询 Tag 绑定</button>
+    <span id="status" aria-live="polite"></span>
   </section>
 
   <section id="result" class="card" hidden>
     <h2>处理结果</h2>
     <div id="summary" class="summary"></div>
-    <button id="downloadBound" class="secondary" type="button" hidden>下载已绑定列表</button>
+    <button id="downloadBound" class="secondary" type="button" hidden>导出已绑定列表</button>
     <textarea id="boundList" class="result-list" readonly hidden></textarea>
     <pre id="details"></pre>
   </section>
+
+  <p class="security-note">AppKey 和 Master Secret 仅保存在当前扩展页面内存中，不会写入浏览器存储。</p>
 </main>
-
-<script>
-  const $ = (id) => document.getElementById(id);
-  const idsBox = $("registrationIds");
-  const actionButtons = [$("bindTag"), $("verifyTag")];
-  let lastBoundIds = [];
-
-  function registrationIds() {
-    const seen = new Set();
-    return idsBox.value.split(/\r?\n/).map((value) => value.trim()).filter((value) => {
-      if (!value || seen.has(value)) return false;
-      seen.add(value);
-      return true;
-    });
-  }
-
-  function updateCount() {
-    $("idCount").textContent = `${registrationIds().length} 个 registration ID`;
-  }
-
-  function download(name, content) {
-    const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = name;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function csvToIds(text) {
-    const rows = text.replace(/^\uFEFF/, "").split(/\r?\n/).map((line) => {
-      let value = line.split(",", 1)[0].trim();
-      if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1).replace(/""/g, '"');
-      return value;
-    }).filter(Boolean);
-    if (rows[0] && ["registration_id", "registration id", "registrationid"].includes(rows[0].toLowerCase())) rows.shift();
-    return [...new Set(rows)];
-  }
-
-  function setBusy(busy, message = "") {
-    actionButtons.forEach((button) => button.disabled = busy);
-    $("status").className = "";
-    $("status").textContent = message;
-  }
-
-  function addPill(text) {
-    const item = document.createElement("span");
-    item.className = "pill";
-    item.textContent = text;
-    $("summary").appendChild(item);
-  }
-
-  function showResult(mode, data) {
-    $("result").hidden = false;
-    $("summary").replaceChildren();
-    $("details").textContent = "";
-    $("boundList").hidden = true;
-    $("downloadBound").hidden = true;
-
-    if (mode === "bind") {
-      addPill(`总数 ${data.total}`);
-      addPill(`成功 ${data.success_count}`);
-      addPill(`失败 ${data.failed_count}`);
-      addPill(`批次 ${data.batches}`);
-      $("details").textContent = JSON.stringify(data.results, null, 2);
-      return;
-    }
-
-    lastBoundIds = data.bound_registration_ids || [];
-    addPill(`总数 ${data.total}`);
-    addPill(`已绑定 ${data.bound_count}`);
-    addPill(`未绑定 ${data.unbound_count}`);
-    addPill(`查询失败 ${data.error_count}`);
-    $("boundList").hidden = false;
-    $("boundList").value = lastBoundIds.join("\n");
-    $("downloadBound").hidden = lastBoundIds.length === 0;
-    $("details").textContent = data.errors?.length ? JSON.stringify(data.errors, null, 2) : "查询完成，没有接口错误。";
-  }
-
-  async function run(mode) {
-    const ids = registrationIds();
-    const payload = {
-      api_base_url: $("apiBase").value,
-      app_key: $("appKey").value.trim(),
-      master_secret: $("masterSecret").value.trim(),
-      tag: $("tag").value.trim(),
-      registration_ids: ids,
-      timeout_seconds: 30
-    };
-    if (!payload.app_key || !payload.master_secret || !payload.tag || !ids.length) {
-      $("status").className = "error";
-      $("status").textContent = "请填写鉴权参数、Tag 和 registration ID。";
-      return;
-    }
-
-    setBusy(true, mode === "bind" ? "正在批量设置……" : "正在查询……");
-    try {
-      const response = await fetch(mode === "bind" ? "/api/tags/batch" : "/api/tags/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `请求失败：HTTP ${response.status}`);
-      showResult(mode, data);
-      $("status").className = "ok";
-      $("status").textContent = "处理完成";
-    } catch (error) {
-      $("status").className = "error";
-      $("status").textContent = error.message || String(error);
-    } finally {
-      actionButtons.forEach((button) => button.disabled = false);
-    }
-  }
-
-  idsBox.addEventListener("input", updateCount);
-  $("clearIds").addEventListener("click", () => { idsBox.value = ""; updateCount(); });
-  $("csvFile").addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    try {
-      idsBox.value = csvToIds(await file.text()).join("\n");
-      updateCount();
-      $("status").className = "ok";
-      $("status").textContent = `已导入 ${registrationIds().length} 个 ID`;
-    } catch (error) {
-      $("status").className = "error";
-      $("status").textContent = `读取 CSV 失败：${error.message || error}`;
-    } finally {
-      event.target.value = "";
-    }
-  });
-  $("downloadTemplate").addEventListener("click", () => download("registration-id-template.csv", "registration_id\nregistration-id-1\nregistration-id-2\n"));
-  $("downloadBound").addEventListener("click", () => download("bound-registration-ids.csv", `registration_id\n${lastBoundIds.join("\n")}\n`));
-  $("bindTag").addEventListener("click", () => run("bind"));
-  $("verifyTag").addEventListener("click", () => run("verify"));
-  fetch("/api/session/watch").catch(() => {});
-  updateCount();
-</script>
+<script src="app.js"></script>
 </body>
 </html>

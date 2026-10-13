@@ -1,0 +1,32 @@
+name: Build browser extension
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate extension files
+        run: |
+          python -m json.tool manifest.json > /dev/null
+          node --check background.js
+          node --check static/app.js
+
+      - name: Create extension package
+        run: |
+          mkdir -p dist
+          zip -r dist/EngageLab-Tag-Tool-Extension.zip manifest.json background.js static README.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EngageLab-Tag-Tool-Extension
+          path: dist/EngageLab-Tag-Tool-Extension.zip
+          if-no-files-found: error

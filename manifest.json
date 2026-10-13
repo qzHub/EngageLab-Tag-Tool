@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "EngageLab Tag Tool",
+  "version": "2.0.0",
+  "description": "批量设置 EngageLab Tag，并验证候选 registration ID 的绑定关系。",
+  "action": {
+    "default_title": "打开 EngageLab Tag Tool"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "https://pushapi-sgp.engagelab.com/*",
+    "https://pushapi-usva.engagelab.com/*",
+    "https://pushapi-defra.engagelab.com/*",
+    "https://pushapi-hk.engagelab.com/*",
+    "https://pushapi-jpn.engagelab.com/*",
+    "https://pushapi-bra.engagelab.com/*"
+  ]
+}
